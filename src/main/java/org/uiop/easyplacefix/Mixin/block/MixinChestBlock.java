@@ -35,10 +35,16 @@ public class MixinChestBlock implements IBlock {
     @Override
     public void afterAction() {
         MinecraftClient.getInstance().getNetworkHandler().sendPacket(
-                new ClientCommandC2SPacket(
-                MinecraftClient.getInstance().player,
-                        ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY
-        ));
+                new PlayerInputC2SPacket(
+                        new PlayerInput(
+                                playerInput.forward(),
+                                playerInput.backward(),
+                                playerInput.left(), playerInput.
+                                right(), playerInput.jump(),
+                                false,
+                                playerInput.sprint()
+                        ))
+        );
 
     }
 
