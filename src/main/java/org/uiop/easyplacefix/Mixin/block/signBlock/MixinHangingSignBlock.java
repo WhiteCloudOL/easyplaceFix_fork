@@ -44,6 +44,26 @@ public abstract class MixinHangingSignBlock implements IBlock {
                 blockState.get(Properties.ROTATION) * 23
         ), LookAt.GetNow.NowPitch());
     }
+//@Override
+//public Pair<LookAt, LookAt> getYawAndPitch(BlockState blockState) {
+//    return new Pair<>(LookAt.Fractionize.customize(
+//            ((blockState.get(Properties.ROTATION) * 22.5F) + 180) % 360
+//    ), LookAt.GetNow.NowPitch());
+//}
+
+    @Override
+    public void firstAction(BlockState stateSchematic) {
+        if(stateSchematic.get(Properties.ATTACHED)){
+            PlayerInputAction.SetShift(true);
+        }
+    }
+
+    @Override
+    public void afterAction(BlockState stateSchematic) {
+        if(stateSchematic.get(Properties.ATTACHED)){
+            PlayerInputAction.SetShift(false);
+        }
+    }
 
     @Override
     public Pair<RelativeBlockHitResult, Integer> getHitResult(BlockState blockState, BlockPos blockPos, BlockState worldBlockState) {
