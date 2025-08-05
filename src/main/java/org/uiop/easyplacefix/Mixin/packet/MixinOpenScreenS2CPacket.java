@@ -1,10 +1,12 @@
 package org.uiop.easyplacefix.Mixin.packet;
 
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.s2c.play.OpenScreenS2CPacket;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.uiop.easyplacefix.EasyPlaceFix;
 import org.uiop.easyplacefix.until.PlayerBlockAction;
 
 @Mixin(OpenScreenS2CPacket.class)
@@ -15,6 +17,7 @@ public class MixinOpenScreenS2CPacket {
                     target = "Lnet/minecraft/network/listener/ClientPlayPacketListener;" +
                             "onOpenScreen(Lnet/minecraft/network/packet/s2c/play/OpenScreenS2CPacket;)V"))
     private boolean OpenScreenFail(ClientPlayPacketListener instance, OpenScreenS2CPacket openScreenS2CPacket) {
-        return PlayerBlockAction.openScreenAction.run(openScreenS2CPacket.getSyncId());
+        EasyPlaceFix.screenId= openScreenS2CPacket.getSyncId()+1;
+        return PlayerBlockAction.openScreenAction.run();
     }
 }
