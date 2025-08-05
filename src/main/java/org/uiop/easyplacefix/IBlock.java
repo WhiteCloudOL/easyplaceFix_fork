@@ -42,8 +42,8 @@ public interface IBlock {
 
     default void BlockAction(BlockState blockState, BlockHitResult blockHitResult) {
     }
-    default void firstAction(){}
-    default void afterAction(){}
+    default void firstAction(BlockState stateSchematic, BlockHitResult blockHitResult){}
+    default void afterAction(BlockState stateSchematic, BlockHitResult blockHitResult){}
     default ActionResult isSchemaTermination(BlockPos pos, BlockState blockState, BlockState worldBlockstate){return null;}
     default ActionResult isWorldTermination(BlockPos pos, BlockState blockState,BlockState worldBlockstate){return null;}
     default Item getItemForBlockState(BlockState blockState){return null;}
