@@ -1,5 +1,7 @@
 package org.uiop.easyplacefix.until;
 
+import com.tick_ins.tick.RunnableWithLast;
+import com.tick_ins.tick.TickThread;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacementManager;
@@ -13,15 +15,12 @@ import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Pair;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import org.uiop.easyplacefix.IBlock;
 import org.uiop.easyplacefix.IClientPlayerInteractionManager;
@@ -34,16 +33,14 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-import static org.uiop.easyplacefix.config.easyPlacefixConfig.IGNORE_NBT;
-import static org.uiop.easyplacefix.until.PlayerBlockAction.useItemOnAction.*;
 import static fi.dy.masa.litematica.util.InventoryUtils.findSlotWithBoxWithItem;
 import static fi.dy.masa.litematica.util.InventoryUtils.setPickedItemToHand;
 import static fi.dy.masa.litematica.util.WorldUtils.getValidBlockRange;
 import static fi.dy.masa.litematica.util.WorldUtils.isPositionWithinRangeOfSchematicRegions;
 import static org.uiop.easyplacefix.EasyPlaceFix.findBlockInInventory;
-import static org.uiop.easyplacefix.EasyPlaceFix.scheduler;
-import static org.uiop.easyplacefix.config.easyPlacefixConfig.LOOSEN_MODE;
+import static org.uiop.easyplacefix.config.easyPlacefixConfig.*;
 import static org.uiop.easyplacefix.data.LoosenModeData.items;
+import static org.uiop.easyplacefix.until.PlayerBlockAction.useItemOnAction.*;
 
 public class doEasyPlace {//TODO 轻松放置重写计划
 
@@ -122,7 +119,8 @@ public class doEasyPlace {//TODO 轻松放置重写计划
         BlockHitResult trace = traceWrapper.getBlockHitResult();//这是投影获取玩家指向的方法
         World schematicWorld = SchematicWorldHandler.getSchematicWorld();
         BlockPos pos = trace.getBlockPos();//这是投影获取玩家指向方块坐标的方法
-        if (concurrentMap.containsKey(pos)) return ActionResult.FAIL;
+
+        if (isPlacementCooling(pos)) return ActionResult.FAIL;// 没有超时 危险! ->每次放之前检查，并且不再遍历整个缓存数组
         BlockState stateClient = mc.world.getBlockState(pos);//获取本地方块状态
         BlockState stateSchematic = schematicWorld.getBlockState(pos);
         ActionResult isTermination = ((IBlock) stateClient.getBlock()).isWorldTermination(pos, stateSchematic, stateClient);//是否终止
@@ -180,108 +178,116 @@ public class doEasyPlace {//TODO 轻松放置重写计划
                     modifyBoolean = true;
                 }
                 ItemStack finalStack = itemStack2;
-                concurrentMap.put(pos,0L);
+//                concurrentMap.put(pos,0L);
 
                 AtomicReference<Hand> hand = new AtomicReference<>();
 
-                Channel channel = ((ClientConnectionAccessor) MinecraftClient.getInstance().getNetworkHandler().getConnection()).getChannel();
-                Pair<Float, Float> lookAtPair = ((IBlock) block).getLimitYawAndPitch(stateSchematic);
-                boolean wantActionAck = ((IBlock) block).HasSleepTime(stateSchematic);
-                if (wantActionAck) {
-                    scheduler.execute(() -> {
-                        Runnable runnable = (() ->
-                                mc.execute(() -> {
-                                    pickItem(mc, finalStack);
-                                    hand.set(EntityUtils.getUsedHandForItem(mc.player, finalStack));
-                                    ((IClientPlayerInteractionManager) interactionManager).syn();
-                                    ((IBlock) block).firstAction();
-                                    interactionManager.interactBlock(
-                                            mc.player,
-                                            hand.get(),
-                                            offsetBlockHitResult
-                                    );
-                                 concurrentMap.put(pos,System.currentTimeMillis());//设置缓存
-                                    mc.player.swingHand(hand.get());
-                                    int i = 1;
-                                    while (i < blockHitResultIntegerPair.getRight()) {
+//                Channel channel = ((ClientConnectionAccessor) MinecraftClient.getInstance().getNetworkHandler().getConnection()).getChannel();
+//                Pair<Float, Float> lookAtPair = ((IBlock) block).getLimitYawAndPitch(stateSchematic);
+                boolean hasSleep = ((IBlock) block).HasSleepTime(stateSchematic);
+                var YawAndPitch = ((IBlock) block).getYawAndPitch(stateSchematic);
+                if (YawAndPitch != null) {
+                    yawLock = YawAndPitch.getLeft().Value();
+                    pitchLock = YawAndPitch.getRight().Value();
+                }
+                if (hasSleep) {
+                    TickThread.addLastTask(
+                            new RunnableWithLast.Builder()
+                                    .setTask(() -> {
+                                        PlayerRotationAction.setServerBoundPlayerRotation(
+                                                yawLock,
+                                                pitchLock,
+                                                mc.player.horizontalCollision
+                                        );
+                                        pickItem(mc, finalStack);
+                                        hand.set(EntityUtils.getUsedHandForItem(mc.player, finalStack));
+                                        ((IClientPlayerInteractionManager) interactionManager).syn();
+                                    })
+                                    .setYawAndPitch(new oshi.util.tuples.Pair<>(yawLock, pitchLock))
+                                    .cache(() -> {
+                                        ((IBlock) block).firstAction(stateSchematic, trace);
                                         interactionManager.interactBlock(
                                                 mc.player,
                                                 hand.get(),
-                                                trace
+                                                offsetBlockHitResult
                                         );
                                         mc.player.swingHand(hand.get());
+                                        int i = 1;
+                                        while (i < blockHitResultIntegerPair.getRight()) {
+                                            interactionManager.interactBlock(
+                                                    mc.player,
+                                                    hand.get(),
+                                                    trace
+                                            );
+                                            mc.player.swingHand(hand.get());
 
-                                        i++;
-                                    }
-                                    ((IBlock) block).afterAction();
-                                    ((IBlock) block).BlockAction(stateSchematic, trace);
-                                }));
-
-                        yawLock = lookAtPair.getLeft();
-                        pitchLock = lookAtPair.getRight();
-                        notChangPlayerLook = true;
-                        channel.writeAndFlush(new PlayerMoveC2SPacket.LookAndOnGround(
-                                yawLock,
-                                pitchLock,
-                                MinecraftClient.getInstance().player.isOnGround(),
-                                mc.player.horizontalCollision//不知道干嘛的参数
-                        ));
-                        channel.writeAndFlush(new PlayerActionC2SPacket(
-                                PlayerActionC2SPacket.Action.ABORT_DESTROY_BLOCK,
-                                pos,
-                                Direction.DOWN
-                        ));
-                        PlayerBlockAction.useItemOnAction.taskQueue.offer(runnable);
-
-                        try {
-                            semaphore.acquire();
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            // 处理中断异常
-                        }
-
-
-                    });
-
+                                            i++;
+                                        }
+                                        ((IBlock) block).afterAction(stateSchematic, trace);
+                                        ((IBlock) block).BlockAction(stateSchematic, trace);
+                                        if (CLIENT_ROTATION_REVERT.getBooleanValue()){
+                                            PlayerRotationAction.restRotation();
+                                        }
+                                    })
+                                    .build()
+                    );
 
                 } else {
-                    pickItem(mc, finalStack);
-                    ((IClientPlayerInteractionManager) interactionManager).syn();
-                    hand.set(EntityUtils.getUsedHandForItem(mc.player, finalStack));
-                    if (lookAtPair != null) {
-                        PlayerRotationAction.setServerBoundPlayerRotation(
-                                lookAtPair.getLeft(),
-                                lookAtPair.getRight(),
-                                mc.player.horizontalCollision
-                        );
-                    }
-                    ((IBlock) block).firstAction();
-                    interactionManager.interactBlock(
-                            mc.player,
-                            hand.get(),
-                            offsetBlockHitResult
-                    );
-                    mc.player.swingHand(hand.get());
-                    concurrentMap.put(pos, 10086L);
-                    int i = 1;
-                    while (i < blockHitResultIntegerPair.getRight()) {
-                        interactionManager.interactBlock(
-                                mc.player,
-                                hand.get(),
-                                trace
-                        );
-                        mc.player.swingHand(hand.get());
+                    TickThread.addTask(new RunnableWithLast.Builder()
+                                    .setTask(() -> {
+                                        if (YawAndPitch != null) {
+                                            PlayerRotationAction.setServerBoundPlayerRotation(
+                                                    yawLock,
+                                                    pitchLock,
+                                                    mc.player.horizontalCollision
+                                            );
+                                        }
 
-                        i++;
-                    }
-                    ((IBlock) block).afterAction();
-                    ((IBlock) block).BlockAction(stateSchematic, trace);
-                    if (lookAtPair != null) PlayerRotationAction.restRotation();
+                                        pickItem(mc, finalStack);
+                                        hand.set(EntityUtils.getUsedHandForItem(mc.player, finalStack));
+                                        ((IClientPlayerInteractionManager) interactionManager).syn();
+                                    })
+                                    .setYawAndPitch((YawAndPitch == null) ? null : new oshi.util.tuples.Pair<>(yawLock, pitchLock))
+                                    .build()
+                            ,
+                            new RunnableWithLast.Builder()
+                                    .setTask(() -> {
+                                        ((IBlock) block).firstAction(stateSchematic, trace);
+                                        interactionManager.interactBlock(
+                                                mc.player,
+                                                hand.get(),
+                                                offsetBlockHitResult
+                                        );
+                                        mc.player.swingHand(hand.get());
+                                        int i = 1;
+                                        while (i < blockHitResultIntegerPair.getRight()) {
+                                            interactionManager.interactBlock(
+                                                    mc.player,
+                                                    hand.get(),
+                                                    trace
+                                            );
+                                            mc.player.swingHand(hand.get());
+
+                                            i++;
+                                        }
+                                        ((IBlock) block).afterAction(stateSchematic, trace);
+                                        ((IBlock) block).BlockAction(stateSchematic, trace);
+                                        if (CLIENT_ROTATION_REVERT.getBooleanValue()){
+                                            PlayerRotationAction.restRotation();
+                                        }
+                                    })
+                                    .build()
+                    );
+
+
                 }
 
 
-                return ActionResult.SUCCESS;
             }
+
+
+            return ActionResult.SUCCESS;
+
         }
         if (placementRestrictionInEffect(pos)) return ActionResult.FAIL;
         return ActionResult.PASS;
@@ -296,9 +302,9 @@ public class doEasyPlace {//TODO 轻松放置重写计划
                     return stack;
                 } else {
                     int slot;
-                    if (IGNORE_NBT.getBooleanValue()){
-                        slot =getSlotWithStackWithOutNbt(stack,inv);
-                    }else {
+                    if (IGNORE_NBT.getBooleanValue()) {
+                        slot = getSlotWithStackWithOutNbt(stack, inv);
+                    } else {
                         slot = inv.getSlotWithStack(stack);
                     }
 
@@ -318,20 +324,22 @@ public class doEasyPlace {//TODO 轻松放置重写计划
         return null;
 
     }
+
     public static int getSlotWithStackWithOutNbt(ItemStack stack, PlayerInventory inv) {
-        for(int i = 0; i < inv.main.size(); ++i) {
-            if (!inv.main.get(i).isEmpty() && ItemStack.areItemsEqual(stack, inv.main.get(i))) {
+        for (int i = 0; i < inv.size(); ++i) {
+            if (!inv.getStack(i).isEmpty() && ItemStack.areItemsEqual(stack, inv.getStack(i))) {
                 return i;
             }
         }
 
         return -1;
     }
+
     public static void pickItem(MinecraftClient mc, ItemStack stack) {
 
         if (EntityUtils.isCreativeMode(mc.player)) {
             setPickedItemToHand(stack, mc);
-            mc.interactionManager.clickCreativeStack(mc.player.getStackInHand(Hand.MAIN_HAND), 36 + mc.player.getInventory().selectedSlot);
+            mc.interactionManager.clickCreativeStack(mc.player.getStackInHand(Hand.MAIN_HAND), 36 + mc.player.getInventory().getSelectedSlot());
         } else {
             setPickedItemToHand(stack, mc);
         }
