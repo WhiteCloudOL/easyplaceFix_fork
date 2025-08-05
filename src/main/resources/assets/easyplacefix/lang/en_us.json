@@ -15,5 +15,6 @@
   "nbtIgnore": "easyPlaceIgnoreItemNBT",
   "nbtIgnoreHotkey": "easyPlaceIgnoreItemNBT shortcut key",
   "observerDetect": "easyPlacementOfObserverDetection",
-  "litematica.gui.button.config_gui.easy_fix": "Easy Fix"
+  "litematica.gui.button.config_gui.easy_fix": "Easy Fix",
+  "EasyPlaceFix.config.generic.comment.clientRotationRevert":"Sends an extra packet to revert to the original rotation (making your movement appear more natural)."
 }

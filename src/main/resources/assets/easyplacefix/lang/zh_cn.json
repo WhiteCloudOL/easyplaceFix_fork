@@ -15,5 +15,6 @@
   "nbtIgnore": "轻松放置忽视库存物品NBT",
   "nbtIgnoreHotkey": "轻松放置忽视库存物品NBT快捷键",
   "observerDetect": "轻松放置侦测器检测",
-  "litematica.gui.button.config_gui.easy_fix": "轻松放置修复"
+  "litematica.gui.button.config_gui.easy_fix": "轻松放置修复",
+  "EasyPlaceFix.config.generic.comment.clientRotationRevert":"会多发送一个数据包用来恢复原来的朝向(让你看起来相对正常)"
 }
