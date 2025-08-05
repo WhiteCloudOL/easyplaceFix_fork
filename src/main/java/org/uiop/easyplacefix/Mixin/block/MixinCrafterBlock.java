@@ -1,19 +1,21 @@
 package org.uiop.easyplacefix.Mixin.block;
 
+import com.tick_ins.tick.RunnableWithCountDown;
+import com.tick_ins.tick.TickThread;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.CrafterBlock;
 import net.minecraft.block.entity.CrafterBlockEntity;
 import net.minecraft.block.enums.Orientation;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.ClickSlotC2SPacket;
 import net.minecraft.network.packet.c2s.play.CloseHandledScreenC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
 import net.minecraft.network.packet.c2s.play.SlotChangedStateC2SPacket;
 import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.screen.sync.ItemStackHash;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Pair;
@@ -35,6 +37,11 @@ public class MixinCrafterBlock implements IBlock {
         Orientation orientation = blockState.get(Properties.ORIENTATION);
         Direction facing = orientation.getFacing();//决定其是垂直还是水平(水平情况附带朝向)
         return facing != Direction.UP && facing != Direction.DOWN;
+    }
+
+    @Override
+    public void firstAction(BlockState stateSchematic, BlockHitResult blockHitResult) {
+        PlayerBlockAction.openScreenAction.count++;
     }
 
     @Override
@@ -75,20 +82,25 @@ public class MixinCrafterBlock implements IBlock {
             }
         }
         if (crafterOperation) {
-            PlayerBlockAction.openScreenAction.taskQueue.offer(() -> {
-                for (int slot = 0; slot < crafterSlot.size(); slot++) {
+            clientPlayNetworkHandler.sendPacket(new PlayerInteractBlockC2SPacket(Hand.MAIN_HAND, blockHitResult, 0));
+//            TickThread.addCountDownTask(new RunnableWithCountDown.Builder().setCount(5).build(()->{
+                for (short slot = 0; slot < crafterSlot.size(); slot++) {
                     boolean isDisable = crafterSlot.get(slot);
                     if (isDisable) {
                         clientPlayNetworkHandler.sendPacket(new SlotChangedStateC2SPacket(slot, EasyPlaceFix.screenId, false));//TODO
-                        clientPlayNetworkHandler.sendPacket(new ClickSlotC2SPacket(EasyPlaceFix.screenId, EasyPlaceFix.screenId, slot, 0, SlotActionType.PICKUP, ItemStack.EMPTY, new Int2ObjectOpenHashMap<>()));
+                        clientPlayNetworkHandler.sendPacket(new ClickSlotC2SPacket(EasyPlaceFix.screenId, 1, slot, (byte) 0, SlotActionType.PICKUP, Int2ObjectMaps.emptyMap(), ItemStackHash.EMPTY));
                     }
 
                 }
                 clientPlayNetworkHandler.sendPacket(new CloseHandledScreenC2SPacket(EasyPlaceFix.screenId));
-            });
-            clientPlayNetworkHandler.sendPacket(new PlayerInteractBlockC2SPacket(Hand.MAIN_HAND,blockHitResult,0));
-        }
 
+//            }));
+
+
+        }
+        TickThread.addCountDownTask(new RunnableWithCountDown.Builder()
+                .setCount(3).build(() -> PlayerBlockAction.openScreenAction.count--)
+        );
 
 //        var BlockActionPacket = new PlayerInteractBlockC2SPacket(
 //                Hand.MAIN_HAND,

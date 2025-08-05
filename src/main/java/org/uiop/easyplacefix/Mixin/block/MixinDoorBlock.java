@@ -18,8 +18,11 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.uiop.easyplacefix.IBlock;
+import org.uiop.easyplacefix.ICanUse;
 import org.uiop.easyplacefix.LookAt;
 import org.uiop.easyplacefix.data.RelativeBlockHitResult;
+import org.uiop.easyplacefix.until.PlayerBlockAction;
+import org.uiop.easyplacefix.until.PlayerInputAction;
 
 @Mixin(DoorBlock.class)
 public abstract class MixinDoorBlock implements IBlock {
@@ -83,5 +86,35 @@ public abstract class MixinDoorBlock implements IBlock {
 
                     }
                 }, blockState.get(Properties.OPEN) && this.blockSetType.canOpenByHand() ? 2 : 1) : null;
+    }
+
+    @Override
+    public void afterAction(BlockState stateSchematic, BlockHitResult blockHitResult) {
+        DoubleBlockHalf doorHinge = stateSchematic.get(Properties.DOUBLE_BLOCK_HALF);
+        BlockState blockState;
+        if (doorHinge==DoubleBlockHalf.LOWER){
+            blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().down());
+        }else {
+            blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().down(2));
+        }
+
+        if (blockState.getBlock() instanceof ICanUse){
+            PlayerInputAction.SetShift(false);
+        }
+    }
+
+    @Override
+    public void firstAction(BlockState stateSchematic, BlockHitResult blockHitResult) {
+        DoubleBlockHalf doorHinge = stateSchematic.get(Properties.DOUBLE_BLOCK_HALF);
+        BlockState blockState;
+        if (doorHinge==DoubleBlockHalf.LOWER){
+             blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().down());
+        }else {
+             blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().down(2));
+        }
+
+        if (blockState.getBlock() instanceof ICanUse){
+            PlayerInputAction.SetShift(true);
+        }
     }
 }

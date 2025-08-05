@@ -6,13 +6,16 @@ import net.minecraft.block.enums.BlockFace;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.Pair;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.uiop.easyplacefix.IBlock;
+import org.uiop.easyplacefix.ICanUse;
 import org.uiop.easyplacefix.LookAt;
 import org.uiop.easyplacefix.data.RelativeBlockHitResult;
+import org.uiop.easyplacefix.until.PlayerInputAction;
 
 import static net.minecraft.block.WallMountedBlock.canPlaceAt;
 
@@ -66,5 +69,38 @@ public class MixinGrindstoneBlock implements IBlock {
                             blockPos,
                             false), 1);
                 };
+
+    }
+
+    @Override
+    public void afterAction(BlockState stateSchematic, BlockHitResult blockHitResult) {
+        if (stateSchematic.get(Properties.BLOCK_FACE) == BlockFace.CEILING){
+            BlockState blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().up());
+            if (blockState.getBlock() instanceof ICanUse){
+                PlayerInputAction.SetShift(false);
+            }
+
+        }else if (stateSchematic.get(Properties.BLOCK_FACE) == BlockFace.FLOOR){
+            BlockState blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().down());
+            if (blockState.getBlock() instanceof ICanUse){
+                PlayerInputAction.SetShift(false);
+            }
+        }
+    }
+
+    @Override
+    public void firstAction(BlockState stateSchematic, BlockHitResult blockHitResult) {
+        if (stateSchematic.get(Properties.BLOCK_FACE) == BlockFace.CEILING){
+            BlockState blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().up());
+            if (blockState.getBlock() instanceof ICanUse){
+                PlayerInputAction.SetShift(true);
+            }
+
+        }else if (stateSchematic.get(Properties.BLOCK_FACE) == BlockFace.FLOOR){
+            BlockState blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().down());
+            if (blockState.getBlock() instanceof ICanUse){
+                PlayerInputAction.SetShift(true);
+            }
+        }
     }
 }

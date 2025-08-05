@@ -5,9 +5,8 @@ import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.s2c.play.CloseScreenS2CPacket;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.uiop.easyplacefix.until.PlayerBlockAction;
 
-import static org.uiop.easyplacefix.EasyPlaceFix.crafterOperation;
-import static org.uiop.easyplacefix.until.PlayerBlockAction.openScreenAction.waitAction;
 
 @Mixin(CloseScreenS2CPacket.class)
 public class MixinCloseScreenS2CPacket {//这是服务端强制关闭窗口的数据包
@@ -19,6 +18,6 @@ public class MixinCloseScreenS2CPacket {//这是服务端强制关闭窗口的�
                             "onCloseScreen(Lnet/minecraft/network/packet/s2c/play/CloseScreenS2CPacket;)V"
             ))
     private boolean closeScreenFail(ClientPlayPacketListener instance, CloseScreenS2CPacket closeScreenS2CPacket) {
-        return waitAction();
+        return PlayerBlockAction.openScreenAction.run();
     }
 }

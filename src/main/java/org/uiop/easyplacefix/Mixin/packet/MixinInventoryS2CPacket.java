@@ -5,9 +5,7 @@ import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.s2c.play.InventoryS2CPacket;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-
-import static org.uiop.easyplacefix.EasyPlaceFix.crafterOperation;
-import static org.uiop.easyplacefix.until.PlayerBlockAction.openScreenAction.waitAction;
+import org.uiop.easyplacefix.until.PlayerBlockAction;
 
 @Mixin(InventoryS2CPacket.class)
 public class MixinInventoryS2CPacket {//这是发送插槽物品清单的数据包
@@ -19,6 +17,6 @@ public class MixinInventoryS2CPacket {//这是发送插槽物品清单的数据�
                             "onInventory(Lnet/minecraft/network/packet/s2c/play/InventoryS2CPacket;)V"
             ))
     private boolean InventoryFail(ClientPlayPacketListener instance, InventoryS2CPacket inventoryS2CPacket) {
-        return waitAction();
+        return PlayerBlockAction.openScreenAction.run();
     }
 }
