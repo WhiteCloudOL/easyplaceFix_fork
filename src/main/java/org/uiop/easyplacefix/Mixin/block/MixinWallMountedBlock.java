@@ -14,14 +14,31 @@ import net.minecraft.world.WorldView;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.uiop.easyplacefix.IBlock;
+import org.uiop.easyplacefix.ICanUse;
 import org.uiop.easyplacefix.LookAt;
 import org.uiop.easyplacefix.data.RelativeBlockHitResult;
+import org.uiop.easyplacefix.until.PlayerBlockAction;
+import org.uiop.easyplacefix.until.PlayerInputAction;
 
 @Mixin(WallMountedBlock.class)//Lever,button
 public abstract class MixinWallMountedBlock implements IBlock {
     @Shadow
     protected abstract boolean canPlaceAt(BlockState state, WorldView world, BlockPos pos);
-
+//    @Override
+//    public void afterAction(BlockState stateSchematic, BlockHitResult blockHitResult) {
+//        BlockState blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().offset(stateSchematic.get(Properties.FACING).getOpposite()));
+//        if (blockState.getBlock() instanceof ICanUse){
+//            PlayerInputAction.SetShift(false);
+//        }
+//    }
+//
+//    @Override
+//    public void firstAction(BlockState stateSchematic, BlockHitResult blockHitResult) {
+//        BlockState blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().offset(stateSchematic.get(Properties.FACING).getOpposite()));
+//        if (blockState.getBlock() instanceof ICanUse){
+//            PlayerInputAction.SetShift(true);
+//        }
+//    }
     @Override
     public Pair<LookAt, LookAt> getYawAndPitch(BlockState blockState) {
         return switch (blockState.get(Properties.HORIZONTAL_FACING)) {

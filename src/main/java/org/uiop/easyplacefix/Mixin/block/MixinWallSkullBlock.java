@@ -11,8 +11,10 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.uiop.easyplacefix.IBlock;
+import org.uiop.easyplacefix.ICanUse;
 import org.uiop.easyplacefix.LookAt;
 import org.uiop.easyplacefix.data.RelativeBlockHitResult;
+import org.uiop.easyplacefix.until.PlayerInputAction;
 
 import static net.minecraft.block.WallTorchBlock.canPlaceAt;
 
@@ -46,5 +48,26 @@ public class MixinWallSkullBlock implements IBlock {
                                         false
                                 ), 1
                         ) : null;
+    }
+    @Override
+    public void afterAction(BlockState stateSchematic, BlockHitResult blockHitResult) {
+
+        BlockState blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().offset(stateSchematic.get(Properties.HORIZONTAL_FACING).getOpposite()));
+        if (blockState.getBlock() instanceof ICanUse) {
+            PlayerInputAction.SetShift(false);
+        }
+
+
+    }
+
+    @Override
+    public void firstAction(BlockState stateSchematic, BlockHitResult blockHitResult) {
+
+        BlockState blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().offset(stateSchematic.get(Properties.HORIZONTAL_FACING).getOpposite()));
+        if (blockState.getBlock() instanceof ICanUse) {
+            PlayerInputAction.SetShift(true);
+        }
+
+
     }
 }
