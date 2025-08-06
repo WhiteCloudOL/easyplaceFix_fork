@@ -30,4 +30,19 @@ public abstract class MixinCandleBlock implements IBlock {
                 ), blockState.get(Properties.CANDLES)
         ) : null;
     }
+    @Override
+    public void afterAction(BlockState stateSchematic, BlockHitResult blockHitResult) {
+        BlockState blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().down());
+        if (blockState.getBlock() instanceof ICanUse){
+            PlayerInputAction.SetShift(false);
+        }
+    }
+
+    @Override
+    public void firstAction(BlockState stateSchematic, BlockHitResult blockHitResult) {
+        BlockState blockState = MinecraftClient.getInstance().world.getBlockState(blockHitResult.getBlockPos().down());
+        if (blockState.getBlock() instanceof ICanUse){
+            PlayerInputAction.SetShift(true);
+        }
+    }
 }
