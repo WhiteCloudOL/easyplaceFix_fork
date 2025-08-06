@@ -13,7 +13,10 @@ import net.minecraft.world.WorldView;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.uiop.easyplacefix.IBlock;
+import org.uiop.easyplacefix.ICanUse;
 import org.uiop.easyplacefix.data.RelativeBlockHitResult;
+import org.uiop.easyplacefix.until.PlayerBlockAction;
+import org.uiop.easyplacefix.until.PlayerInputAction;
 
 @Mixin(CandleBlock.class)
 public abstract class MixinCandleBlock implements IBlock {
