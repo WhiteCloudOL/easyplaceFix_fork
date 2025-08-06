@@ -25,6 +25,7 @@
   ],
   "depends": {
     "fabricloader": "*",
-    "minecraft": "~1.21.4"
+    "minecraft": "~1.21.4",
+    "tick-predictor": "~1.0.6"
   }
 }
