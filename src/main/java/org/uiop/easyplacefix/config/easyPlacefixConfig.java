@@ -23,8 +23,7 @@ public final class easyPlacefixConfig {
             new ConfigBooleanHotkeyed("clientRotationRevert", false,"","EasyPlaceFix.config.generic.comment.clientRotationRevert","Rotation Revert","客户端朝向恢复");
 //    public static final ConfigBoolean Chain_Mode =
 //            new ConfigBoolean("ChainMode", true, "EasyPlaceFix.config.generic.comment.ChainMode");
-    public static final ConfigOptionList AAA =
-        new ConfigOptionList("1", BlockInfoListType.ALL);
+
 
     public static IConfigBase[] getExtraGenericConfigs() {
         return new IConfigBase[]{
@@ -34,7 +33,6 @@ public final class easyPlacefixConfig {
                 Allow_Interaction,
                 OBSERVER_DETECT,
                 CLIENT_ROTATION_REVERT,
-                 AAA
         };
     }
 }
