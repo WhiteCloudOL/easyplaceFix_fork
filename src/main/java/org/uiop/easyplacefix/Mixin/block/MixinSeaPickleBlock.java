@@ -23,7 +23,7 @@ public abstract class MixinSeaPickleBlock extends PlantBlock implements IBlock {
     @Override
     public Pair<RelativeBlockHitResult, Integer> getHitResult(BlockState blockState, BlockPos blockPos, BlockState worldBlockState) {
         int count;
-        if (worldBlockState.getBlock()==blockState.getBlock()){
+        if (worldBlockState.getBlock()==blockState.getBlock()){//TODO!!历史遗留问题
             count = blockState.get(Properties.PICKLES)-worldBlockState.get(Properties.PICKLES);
             if (count<1)return null;
         }else {
