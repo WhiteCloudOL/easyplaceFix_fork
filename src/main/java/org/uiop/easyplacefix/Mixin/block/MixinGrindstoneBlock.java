@@ -19,8 +19,6 @@ import org.uiop.easyplacefix.LookAt;
 import org.uiop.easyplacefix.data.RelativeBlockHitResult;
 import org.uiop.easyplacefix.until.PlayerInputAction;
 
-import static net.minecraft.block.WallMountedBlock.canPlaceAt;
-
 @Mixin(GrindstoneBlock.class)
 public abstract class MixinGrindstoneBlock implements IBlock {
     @Override
