@@ -8,7 +8,6 @@ import fi.dy.masa.litematica.schematic.placement.SchematicPlacementManager;
 import fi.dy.masa.litematica.util.EntityUtils;
 import fi.dy.masa.litematica.util.RayTraceUtils;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
-import io.netty.channel.Channel;
 import net.minecraft.block.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
@@ -24,7 +23,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.uiop.easyplacefix.IBlock;
 import org.uiop.easyplacefix.IClientPlayerInteractionManager;
-import org.uiop.easyplacefix.Mixin.AccessorMixin.ClientConnectionAccessor;
 import org.uiop.easyplacefix.data.LoosenModeData;
 import org.uiop.easyplacefix.data.RelativeBlockHitResult;
 
@@ -225,7 +223,7 @@ public class doEasyPlace {//TODO 轻松放置重写计划
                                         }
                                         ((IBlock) block).afterAction(stateSchematic, trace);
                                         ((IBlock) block).BlockAction(stateSchematic, trace);
-                                        if (CLIENT_ROTATION_REVERT.getBooleanValue()){
+                                        if (CLIENT_ROTATION_REVERT.getBooleanValue()) {
                                             PlayerRotationAction.restRotation();
                                         }
                                     })
