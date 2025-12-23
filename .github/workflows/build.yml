@@ -25,9 +25,6 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
-      - name: List build files (for debugging)
-        run: find . -name "*.jar" -type f
-
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
